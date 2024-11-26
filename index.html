@@ -8,12 +8,18 @@
 </head>
 
 <body>
+    <div style="position:absolute;z-index:1; visibility: hidden;" id="sliderContainer">
+        <label for="radiusSlider">Radius: </label>
+        <input type="range" min="10" max="500" id="radiusSlider" value="10">
+    </div>
     <script>
         const canvas = document.createElement('canvas');
         canvas.id = 'myCanvas';
         canvas.style.position = 'fixed';
         canvas.style.top = '0';
         canvas.style.left = '0';
+        canvas.style.zIndex = '0';
+
         canvas.width = window.innerWidth;
         canvas.height = window.innerHeight;
         document.body.appendChild(canvas);
@@ -38,16 +44,23 @@
             ctx.scale(scale, scale);
             ctx.fillStyle = 'black';
             for (const point of points) {
-                ctx.fillRect(point.x, point.y, 1, 1);
+                ctx.fillRect(point.x, point.y, 2, 2);
             }
             ctx.fillStyle = 'red';
             for (const point of points.filter(p => p.highlighted)) {
-                ctx.fillRect(point.x, point.y, 1, 1);
+                ctx.fillRect(point.x, point.y, 2, 2);
+            }
+
+            ctx.fillStyle = 'orange';
+            for (const point of points.filter(p => p.proximity)) {
+                ctx.fillRect(point.x, point.y, 2, 2);
             }
             ctx.restore();
         }
 
         redraw();
+
+        let selectedPoint;
 
         canvas.addEventListener('click', (event) => {
             const rect = canvas.getBoundingClientRect();
@@ -58,6 +71,13 @@
                 const distance = Math.sqrt((point.x - clickX) ** 2 + (point.y - clickY) ** 2);
                 if (distance <= 5 / scale) {
                     point.highlighted = !point.highlighted;
+                    if(point.highlighted){
+                        document.getElementById("sliderContainer").style.visibility = 'visible';
+                        selectedPoint = point;
+                    } else {
+                        document.getElementById("sliderContainer").style.visibility = 'hidden';
+                        selectedPoint = undefined;
+                    }
                     break;
                 }
             }
@@ -92,6 +112,26 @@
         canvas.addEventListener('mouseup', () => {
             isDragging = false;
         });
+        const slider = document.getElementById('radiusSlider')
+        // Add an event listener to the slider
+        slider.addEventListener('input', (e) => {
+
+            // Get the current radius value from the slider
+            const radius = parseInt(slider.value, 10);
+
+            for (const point of points) {
+                const distance = Math.sqrt((point.x - selectedPoint.x) ** 2 + (point.y - selectedPoint.y) ** 2);
+                if (distance <= radius / scale && point) {
+                    point.proximity = true;
+                } else {
+                    point.proximity = false;
+                }
+            }
+
+            redraw();
+        });
+
+
     </script>
 </body>
 
