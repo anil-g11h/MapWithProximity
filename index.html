@@ -1,0 +1,98 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Document</title>
+</head>
+
+<body>
+    <script>
+        const canvas = document.createElement('canvas');
+        canvas.id = 'myCanvas';
+        canvas.style.position = 'fixed';
+        canvas.style.top = '0';
+        canvas.style.left = '0';
+        canvas.width = window.innerWidth;
+        canvas.height = window.innerHeight;
+        document.body.appendChild(canvas);
+
+        const ctx = canvas.getContext('2d');
+        const points = [];
+        const numPoints = 1000;
+        let scale = 1;
+        let offsetX = 0;
+        let offsetY = 0;
+
+        for (let i = 0; i < numPoints; i++) {
+            const x = Math.random() * canvas.width;
+            const y = Math.random() * canvas.height;
+            points.push({ x, y });
+        }
+
+        function redraw() {
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            ctx.save();
+            ctx.translate(offsetX, offsetY);
+            ctx.scale(scale, scale);
+            ctx.fillStyle = 'black';
+            for (const point of points) {
+                ctx.fillRect(point.x, point.y, 1, 1);
+            }
+            ctx.fillStyle = 'red';
+            for (const point of points.filter(p => p.highlighted)) {
+                ctx.fillRect(point.x, point.y, 1, 1);
+            }
+            ctx.restore();
+        }
+
+        redraw();
+
+        canvas.addEventListener('click', (event) => {
+            const rect = canvas.getBoundingClientRect();
+            const clickX = (event.clientX - rect.left - offsetX) / scale;
+            const clickY = (event.clientY - rect.top - offsetY) / scale;
+
+            for (const point of points) {
+                const distance = Math.sqrt((point.x - clickX) ** 2 + (point.y - clickY) ** 2);
+                if (distance <= 5 / scale) {
+                    point.highlighted = !point.highlighted;
+                    break;
+                }
+            }
+            redraw();
+        });
+
+        canvas.addEventListener('wheel', (event) => {
+            event.preventDefault();
+            const delta = Math.sign(event.deltaY);
+            scale += delta * 0.1;
+            scale = Math.max(0.1, scale);
+            redraw();
+        });
+
+        let isDragging = false;
+        let dragStartX, dragStartY;
+
+        canvas.addEventListener('mousedown', (event) => {
+            isDragging = true;
+            dragStartX = event.clientX - offsetX;
+            dragStartY = event.clientY - offsetY;
+        });
+
+        canvas.addEventListener('mousemove', (event) => {
+            if (isDragging) {
+                offsetX = event.clientX - dragStartX;
+                offsetY = event.clientY - dragStartY;
+                redraw();
+            }
+        });
+
+        canvas.addEventListener('mouseup', () => {
+            isDragging = false;
+        });
+    </script>
+</body>
+
+</html>
